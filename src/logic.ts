@@ -4,6 +4,21 @@ import { QueryConfig, QueryResult } from "pg";
 import {iMovies, iMoviesRequest} from './interface'
 import format from "pg-format";
 const getMovies = async (req: Request, res: Response): Promise<Response>=>{
+    const category: any = req.query.category
+    console.log(category)
+    if(category){
+        const getQuery = String`
+        select * from movies
+        where category = $1;
+        `
+        const queryConfig: QueryConfig = {
+            text: getQuery,
+            values: [category]
+        }
+        const getRequest: QueryResult = await client.query(queryConfig)
+      //  console.log(getRequest)
+        return res.status(200).json(getRequest.rows)
+    }
     const getQuery = String`
         select * from movies
     `
@@ -42,7 +57,8 @@ const createMovie = async (req: Request, res: Response): Promise<Response>=>{
     }
     const returnQuery: QueryResult<iMovies> = await client.query(queryConfig)
     console.log(returnQuery)
-    return res.status(201).json({sucess: 'sipa q deu'})
+
+    return res.status(201).json({sucess: 'created'})
 }
 const postMovie = async (req: Request, res: Response): Promise<Response> =>{
     const id: number = Number (req.params.id)
@@ -63,6 +79,9 @@ const postMovie = async (req: Request, res: Response): Promise<Response> =>{
         values: [id]
     }
     const queryResult: QueryResult = await client.query(queryConfig)
+    if(queryResult.rowCount === 0){
+        return res.status(400).json({error: 'filme não encontrado'})
+    }
     return res.status(201).json(queryResult.rows)
 }
 const deleteMovie = async (req: Request, res: Response): Promise<Response>=>{
@@ -78,7 +97,11 @@ const deleteMovie = async (req: Request, res: Response): Promise<Response>=>{
         text: queryString,
         values: [id]
     }
-    await client.query(queryConfig)
+    const queryResult: QueryResult = await client.query(queryConfig)
+    console.log(queryResult)
+    if(queryResult.rowCount === 0){
+        return res.status(400).json({error: 'filme não encontrado'})
+    }
     return res.status(201).json({sucess: 'deleted'})
 }
 
